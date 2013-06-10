@@ -16,37 +16,37 @@ test_file = 'This is a test\n by Duong'
 
 # implement 
 class ExampleFS_Stat( fuse.Stat ):
-	def __init__( self ) :
-		self.st_ino	= 0
-		self.st_dev	= 0
-		self.st_uid	= os.getuid() #get current user id
-		self.st_gid	= os.getgid() #get current group id
-		self.st_size	= 0  #size
-		self.st_atime	= time.time()  #access time
-		self.st_mtime	= time.time()  #modification time
-		self.st_ctime	= time.time()  #change time
-		# default to read only file
-		self.st_mode = stat.S_IFREG | 0400 #type and permission
-		self.st_nlink = 1 #2 for dirs, 1 for files (generally)
+    def __init__( self ) :
+        self.st_ino	= 0
+        self.st_dev	= 0
+        self.st_uid	= os.getuid() #get current user id
+        self.st_gid	= os.getgid() #get current group id
+        self.st_size	= 0  #size
+        self.st_atime	= time.time()  #access time
+        self.st_mtime	= time.time()  #modification time
+        self.st_ctime	= time.time()  #change time
+        # default to read only file
+        self.st_mode = stat.S_IFREG | 0400 #type and permission
+        self.st_nlink = 1 #2 for dirs, 1 for files (generally)
 
-	def dir( self, mode = 0744 ):
-		self.st_mode = stat.S_IFDIR | mode
-		self.st_nlink = 2
+    def dir( self, mode = 0744 ):
+        self.st_mode = stat.S_IFDIR | mode
+        self.st_nlink = 2
 
 class ExampleFS( fuse.Fuse ):
     def __init__( self, *args, **kw ):
         fuse.Fuse.__init__( self, *args, **kw )
 
     #get the metadata
-	def getattr( self, path ):
+    def getattr( self, path ):
 
-		st = ExampleFS_Stat()
+        st = ExampleFS_Stat()
 
-		if path == '/':
-			st.dir()
-		    return st
+        if path == '/':
+            st.dir()
+            return st
 
-	    if path == test_file_path:
+        if path == test_file_path:
             st.st_size = len( test_file )
             st.st_mode = stat.S_IFREG | 0644
             return st
@@ -55,10 +55,10 @@ class ExampleFS( fuse.Fuse ):
             st.st_size = 512 * ( 2 ** 40 )	# hard code file size #increase size of file
             return st
 
-	    # if we are still here then this file doesn't exist
+        # if we are still here then this file doesn't exist
         return -errno.ENOENT
 
-	def open( self, path, flags ):
+    def open( self, path, flags ):
         if path == test_file_path:
             return 0
         return -errno.ENOENT
@@ -74,14 +74,14 @@ class ExampleFS( fuse.Fuse ):
             buffer = test_file[offset : offset + size]
         return buffer
 
-	def readdir( self, path, offset ):    #??
+    def readdir( self, path, offset ):    #??
         if path == '/':
-	        yield fuse.Direntry( '.' )
+            yield fuse.Direntry( '.' )
             yield fuse.Direntry( '..' )
             yield fuse.Direntry( 'readme.txt' )
             yield fuse.Direntry( test_file_path[1:] )
 
-	def write( self, path, buffer, offset ):   # dont understand much
+    def write( self, path, buffer, offset ):   # dont understand much
         global test_file	# force correct context
         if path != test_file_path:
             return -errno.ENOENT
