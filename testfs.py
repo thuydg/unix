@@ -8,23 +8,28 @@ import time
 import fuse
 import os # import os for current uid/gid
 import stat # import stat, ExampleFS_Stat class, ExampleFS.getattr
+import datetime
 
 fuse.fuse_python_api = ( 0, 2 )
 
-test_file_path = '/test.txt'
-test_file = 'This is a test\n by Duong'
+test_file_path = '/test.txt.20130506'
+
+#test_file_path = '/test.txt'
+test_file = 'This is a test\n by Duong\n'
+
+now = datetime.datetime.now() #get the current datetime
 
 # implement 
 class ExampleFS_Stat( fuse.Stat ):
     def __init__( self ) :
-        self.st_ino	= 0
-        self.st_dev	= 0
-        self.st_uid	= os.getuid() #get current user id
-        self.st_gid	= os.getgid() #get current group id
-        self.st_size	= 0  #size
-        self.st_atime	= time.time()  #access time
-        self.st_mtime	= time.time()  #modification time
-        self.st_ctime	= time.time()  #change time
+        self.st_ino  = 0
+        self.st_dev = 0
+        self.st_uid = os.getuid() #get current user id
+        self.st_gid = os.getgid() #get current group id
+        self.st_size    = 0  #size
+        self.st_atime   = time.time()  #access time
+        self.st_mtime   = time.time()  #modification time
+        self.st_ctime   = time.time()  #change time
         # default to read only file
         self.st_mode = stat.S_IFREG | 0400 #type and permission
         self.st_nlink = 1 #2 for dirs, 1 for files (generally)
@@ -52,14 +57,23 @@ class ExampleFS( fuse.Fuse ):
             return st
 
         if path == '/readme.txt':
-            st.st_size = 512 * ( 2 ** 40 )	# hard code file size #increase size of file
+            st.st_size = 512 * ( 2 ** 40 )  # hard code file size #increase size of file
             return st
 
         # if we are still here then this file doesn't exist
         return -errno.ENOENT
 
     def open( self, path, flags ):
+        #return -errno.EACCES
         if path == test_file_path:
+            #get the check date
+            #find()
+            check_date = test_file_path[3:]
+            test_file = 'changed here' #but not changed???
+            #test_file.append(check_date);
+            #check the date
+            #if check_date.date() > datetime.today():
+            #    return -errno.EACESS
             return 0
         return -errno.ENOENT
 
@@ -82,7 +96,7 @@ class ExampleFS( fuse.Fuse ):
             yield fuse.Direntry( test_file_path[1:] )
 
     def write( self, path, buffer, offset ):   # dont understand much
-        global test_file	# force correct context
+        global test_file    # force correct context
         if path != test_file_path:
             return -errno.ENOENT
         length = len( buffer )
@@ -90,7 +104,17 @@ class ExampleFS( fuse.Fuse ):
         new_str += test_file[offset + length:]
         test_file = new_str
         return length
+    
+    #not work well
+    def access(self, path, mode):
+        # if not os.access("." + path, mode):
+        return -errno.EACCES
 
+ #   def readdir(path):
+ #       if path == test_file_path:
+ #       #return -errno.EACESS
+ #          return 0
+        
 if __name__ == '__main__':
     examplefs = ExampleFS()
     args = examplefs.parse( errex = 1 )
