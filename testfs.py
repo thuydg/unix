@@ -12,7 +12,10 @@ import datetime
 
 fuse.fuse_python_api = ( 0, 2 )
 
-test_file_path = '/test.txt.20130506'
+test_dir_name = '20130613'
+test_dir_path = '/' + test_dir_name
+test_file_name ='test.txt'
+test_file_path =test_dir_path + '/' + test_file_name
 
 #test_file_path = '/test.txt'
 test_file = 'This is a test\n by Duong\n'
@@ -50,7 +53,11 @@ class ExampleFS( fuse.Fuse ):
         if path == '/':
             st.dir()
             return st
-
+        
+        if path == test_dir_path:
+            st.dir()
+            return st
+        
         if path == test_file_path:
             st.st_size = len( test_file )
             st.st_mode = stat.S_IFREG | 0644
@@ -68,12 +75,14 @@ class ExampleFS( fuse.Fuse ):
         if path == test_file_path:
             #get the check date
             #find()
-            check_date = test_file_path[3:]
-            test_file = 'changed here' #but not changed???
+            #check_date = test_file_path[3:]
+            #test_file = 'changed here' #but not changed???
             #test_file.append(check_date);
             #check the date
             #if check_date.date() > datetime.today():
-            #    return -errno.EACESS
+            #if test_dir_name.date() > datetime.today():
+            if true:
+                return -errno.EACESS
             return 0
         return -errno.ENOENT
 
@@ -93,7 +102,9 @@ class ExampleFS( fuse.Fuse ):
             yield fuse.Direntry( '.' )
             yield fuse.Direntry( '..' )
             yield fuse.Direntry( 'readme.txt' )
-            yield fuse.Direntry( test_file_path[1:] )
+            yield fuse.Direntry( test_dir_name )
+        if path == test_dir_path:
+            yield fuse.Direntry(test_file_name )
 
     def write( self, path, buffer, offset ):   # dont understand much
         global test_file    # force correct context
