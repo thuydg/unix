@@ -4,10 +4,11 @@
 # will mount an FS, but useless beyond that
 
 import errno
-import time
 import fuse
 import os # import os for current uid/gid
 import stat # import stat, ExampleFS_Stat class, ExampleFS.getattr
+from datetime import date
+import time
 import datetime
 
 fuse.fuse_python_api = ( 0, 2 )
@@ -73,18 +74,27 @@ class ExampleFS( fuse.Fuse ):
     def open( self, path, flags ):
         #return -errno.EACCES
         if path == test_file_path:
-            #get the check date
-            #find()
-            #check_date = test_file_path[3:]
-            #test_file = 'changed here' #but not changed???
-            #test_file.append(check_date);
-            #check the date
-            #if check_date.date() > datetime.today():
-            #if test_dir_name.date() > datetime.today():
-            if true:
+
+            print test_dir_name
+            check_year = test_dir_name[0:4]
+            print "Y" + check_year
+            check_month = test_dir_name[4:6]
+            print "M" + check_month
+            check_day = test_dir_name[6:8]
+            print "D" + check_day
+
+            today = date.today()
+            check_date = datetime.date( int(check_year) , int(check_month) , int(check_day) )
+            print today
+            print "check is"
+            print check_date 
+            if today > check_date :
+                print "today is bigger"
                 return -errno.EACESS
-            return 0
-        return -errno.ENOENT
+            else:
+                print "today is smaller"
+        return 0
+        #return -errno.ENOENT
 
     def read( self, path, size, offset ):
         if path != test_file_path:
