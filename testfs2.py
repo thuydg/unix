@@ -13,7 +13,7 @@ import datetime
 
 fuse.fuse_python_api = ( 0, 2 )
 
-test_dir_name = '20130623'
+test_dir_name = '20130622'
 test_dir_path = '/' + test_dir_name
 test_file_name ='test.txt'
 test_file_path =test_dir_path + '/' + test_file_name
@@ -89,13 +89,12 @@ class ExampleFS( fuse.Fuse ):
             print check_date 
             if today > check_date :
                 print "today is bigger"
-                return 0
             else:
                 print "today is smaller"
-                return -errno.EACESS
-             #why??
-        return 0
+                return -errno.EACCES
+            return 0
         #return -errno.ENOENT
+        return 0
 
     def read( self, path, size, offset ):
         if path != test_file_path:
