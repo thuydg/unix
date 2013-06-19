@@ -190,7 +190,6 @@ class Xmp(Fuse):
                 os.fsync(self.fd)
 
         def flush(self):
-            self._fflush()
             # cf. xmp_flush() in fusexmp_fh.c
             os.close(os.dup(self.fd))
 
