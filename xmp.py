@@ -26,7 +26,7 @@ if not hasattr(fuse, '__version__'):
         "your fuse-py doesn't know of fuse.__version__, probably it's too old."
 
 fuse.fuse_python_api = (0, 2)
-
+now = datetime.datetime.now()
 # We use a custom file class
 fuse.feature_assert('stateful_files', 'has_init')
 
@@ -69,7 +69,7 @@ class Xmp(Fuse):
         # do stuff to set up your filesystem here, if you want
         #import thread
         #thread.start_new_thread(self.mythread, ())
-        self.root = '/'
+        self.root = '/usr/local/timecapsule/'
         # self.file_class = self.XmpFile
 
 #    def mythread(self):
@@ -103,9 +103,13 @@ class Xmp(Fuse):
         os.symlink(path, "." + path1)
 
     def rename(self, path, path1):
+        logging.debug(now + ' rename')       
+        if not time_to_open(path):
+            return -EACCES
         os.rename("." + path, "." + path1)
 
     def link(self, path, path1):
+        logging.debug(today + 'link')
         os.link("." + path, "." + path1)
 
     def chmod(self, path, mode):
@@ -129,7 +133,7 @@ class Xmp(Fuse):
         os.utime("." + path, times)
 
     def open( self, path, mode ):
-        logging.debug('open')
+        logging.debug(now + ' open')
         if (mode & os.O_WRONLY) == 0:
             if not time_to_open(path):
                 return -EACCES
@@ -139,6 +143,11 @@ class Xmp(Fuse):
 
     # def read(self, path, size, offset, fh):    
     def read(self, path, length, offset):
+        logging.debug(now + 'read')
+        #if (mode & os.O_WRONLY) == 0:
+        #    if not time_to_open(path):
+        #        return -EACCES
+
         f = open("." + path, "r")
         f.seek(offset)
         buffer = f.read(length)
@@ -146,16 +155,24 @@ class Xmp(Fuse):
     
     def write(self, path, buf, offset):
         f = open("." + path, "w")
-        logging.debug("seek")
+        logging.debug(now + "seek")
         f.seek(offset)
-        logging.debug("write")
+        logging.debug(now + "write")
         f.write(buf)
         return len(buf)
     #def write(self, path, buf, offset):
+    
+ #   def flush(path, fh=None):
+ #   def release(self, flags):
+   
 
-    # def release(self, flags):
+    def release(self, flags):
+        logging.debug(now + " release")       
+        mode = flag2mode(flags)
+        if (mode & os.O_WRONLY) != 0:
+            logging.debug("write only for relase")        
+        self.file.close()   
 
-        
 def main():
 
     usage = """
