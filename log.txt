@@ -1,0 +1,11 @@
+DEBUG:root:/usr/local/fuse/
+DEBUG:root:/usr/local/fuse/
+DEBUG:root:/
+DEBUG:root:/
+DEBUG:root:open
+DEBUG:root:/
+DEBUG:root:open
+DEBUG:root:open
+DEBUG:root:open
+DEBUG:root:open
+DEBUG:root:open

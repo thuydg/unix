@@ -15,6 +15,11 @@ import fcntl
 import fuse
 from fuse import Fuse
 
+import re #regular expression
+import datetime
+
+import logging
+logging.basicConfig(filename='log.txt',level=logging.DEBUG)
 
 if not hasattr(fuse, '__version__'):
     raise RuntimeError, \
@@ -35,6 +40,25 @@ def flag2mode(flags):
 
     return m
 
+#function to check the time to open! here to break the rule!!
+def time_to_open(path):
+    #create the regular expression to test if the path is need to check or not
+    year_reg = '([0-9][0-9][0-9][0-9])'
+    month_reg = '(1[0-2]|0[1-9])'
+    day_reg = "(1[0-9]|2[0-9]|3[0-1]|0[1-9])"
+    p = re.compile("/(%s%s%s)/" % (year_reg, month_reg, day_reg))
+    datelist = p.findall(path)
+    
+    if len(datelist) == 0:
+        return True
+
+    datelist_int = map((lambda x:int(x[0])),datelist)
+    date_most_future = max(datelist_int)
+    now = datetime.datetime.today()
+    now_int =  now.year *10000 + now.month * 100 + now.day
+
+    return date_most_future < now_int
+
 
 class Xmp(Fuse):
 
@@ -46,7 +70,7 @@ class Xmp(Fuse):
         #import thread
         #thread.start_new_thread(self.mythread, ())
         self.root = '/'
-        self.file_class = self.XmpFile
+        # self.file_class = self.XmpFile
 
 #    def mythread(self):
 #
@@ -104,143 +128,34 @@ class Xmp(Fuse):
     def utime(self, path, times):
         os.utime("." + path, times)
 
-#    The following utimens method would do the same as the above utime method.
-#    We can't make it better though as the Python stdlib doesn't know of
-#    subsecond preciseness in acces/modify times.
-#  
-#    def utimens(self, path, ts_acc, ts_mod):
-#      os.utime("." + path, (ts_acc.tv_sec, ts_mod.tv_sec))
-
-    def access(self, path, mode):
-        if not os.access("." + path, mode):
-            return -EACCES
-
-#    This is how we could add stub extended attribute handlers...
-#    (We can't have ones which aptly delegate requests to the underlying fs
-#    because Python lacks a standard xattr interface.)
-#
-#    def getxattr(self, path, name, size):
-#        val = name.swapcase() + '@' + path
-#        if size == 0:
-#            # We are asked for size of the value.
-#            return len(val)
-#        return val
-#
-#    def listxattr(self, path, size):
-#        # We use the "user" namespace to please XFS utils
-#        aa = ["user." + a for a in ("foo", "bar")]
-#        if size == 0:
-#            # We are asked for size of the attr list, ie. joint size of attrs
-#            # plus null separators.
-#            return len("".join(aa)) + len(aa)
-#        return aa
-
-    def statfs(self):
-        """
-        Should return an object with statvfs attributes (f_bsize, f_frsize...).
-        Eg., the return value of os.statvfs() is such a thing (since py 2.2).
-        If you are not reusing an existing statvfs object, start with
-        fuse.StatVFS(), and define the attributes.
-
-        To provide usable information (ie., you want sensible df(1)
-        output, you are suggested to specify the following attributes:
-
-            - f_bsize - preferred size of file blocks, in bytes
-            - f_frsize - fundamental size of file blcoks, in bytes
-                [if you have no idea, use the same as blocksize]
-            - f_blocks - total number of blocks in the filesystem
-            - f_bfree - number of free blocks
-            - f_files - total number of file inodes
-            - f_ffree - nunber of free file inodes
-        """
-
-        return os.statvfs(".")
+    def open( self, path, mode ):
+        logging.debug('open')
+        if (mode & os.O_WRONLY) == 0:
+            if not time_to_open(path):
+                return -EACCES
 
     def fsinit(self):
         os.chdir(self.root)
 
-    class XmpFile(object):
+    # def read(self, path, size, offset, fh):    
+    def read(self, path, length, offset):
+        f = open("." + path, "r")
+        f.seek(offset)
+        buffer = f.read(length)
+        return buffer
+    
+    def write(self, path, buf, offset):
+        f = open("." + path, "w")
+        logging.debug("seek")
+        f.seek(offset)
+        logging.debug("write")
+        f.write(buf)
+        return len(buf)
+    #def write(self, path, buf, offset):
 
-        def __init__(self, path, flags, *mode):
-            self.file = os.fdopen(os.open("." + path, flags, *mode),
-                                  flag2mode(flags))
-            self.fd = self.file.fileno()
+    # def release(self, flags):
 
-        def read(self, length, offset):
-            self.file.seek(offset)
-            return self.file.read(length)
-
-        def write(self, buf, offset):
-            self.file.seek(offset)
-            self.file.write(buf)
-            return len(buf)
-
-        def release(self, flags):
-            self.file.close()
-
-        def _fflush(self):
-            if 'w' in self.file.mode or 'a' in self.file.mode:
-                self.file.flush()
-
-        def fsync(self, isfsyncfile):
-            self._fflush()
-            if isfsyncfile and hasattr(os, 'fdatasync'):
-                os.fdatasync(self.fd)
-            else:
-                os.fsync(self.fd)
-
-        def flush(self):
-            # cf. xmp_flush() in fusexmp_fh.c
-            os.close(os.dup(self.fd))
-
-        def fgetattr(self):
-            return os.fstat(self.fd)
-
-        def ftruncate(self, len):
-            self.file.truncate(len)
-
-        def lock(self, cmd, owner, **kw):
-            # The code here is much rather just a demonstration of the locking
-            # API than something which actually was seen to be useful.
-
-            # Advisory file locking is pretty messy in Unix, and the Python
-            # interface to this doesn't make it better.
-            # We can't do fcntl(2)/F_GETLK from Python in a platfrom independent
-            # way. The following implementation *might* work under Linux. 
-            #
-            # if cmd == fcntl.F_GETLK:
-            #     import struct
-            # 
-            #     lockdata = struct.pack('hhQQi', kw['l_type'], os.SEEK_SET,
-            #                            kw['l_start'], kw['l_len'], kw['l_pid'])
-            #     ld2 = fcntl.fcntl(self.fd, fcntl.F_GETLK, lockdata)
-            #     flockfields = ('l_type', 'l_whence', 'l_start', 'l_len', 'l_pid')
-            #     uld2 = struct.unpack('hhQQi', ld2)
-            #     res = {}
-            #     for i in xrange(len(uld2)):
-            #          res[flockfields[i]] = uld2[i]
-            #  
-            #     return fuse.Flock(**res)
-
-            # Convert fcntl-ish lock parameters to Python's weird
-            # lockf(3)/flock(2) medley locking API...
-            op = { fcntl.F_UNLCK : fcntl.LOCK_UN,
-                   fcntl.F_RDLCK : fcntl.LOCK_SH,
-                   fcntl.F_WRLCK : fcntl.LOCK_EX }[kw['l_type']]
-            if cmd == fcntl.F_GETLK:
-                return -EOPNOTSUPP
-            elif cmd == fcntl.F_SETLK:
-                if op != fcntl.LOCK_UN:
-                    op |= fcntl.LOCK_NB
-            elif cmd == fcntl.F_SETLKW:
-                pass
-            else:
-                return -EINVAL
-
-            fcntl.lockf(self.fd, op, kw['l_start'], kw['l_len'])
-
-
-
+        
 def main():
 
     usage = """
@@ -255,6 +170,7 @@ Userspace nullfs-alike: mirror the filesystem tree from some point on.
                              help="mirror filesystem from under PATH [default: %default]")
     server.parse(values=server, errex=1)
 
+    logging.debug(server.root)
     try:
         if server.fuse_args.mount_expected():
             os.chdir(server.root)
@@ -267,4 +183,3 @@ Userspace nullfs-alike: mirror the filesystem tree from some point on.
 
 if __name__ == '__main__':
     main()
-
