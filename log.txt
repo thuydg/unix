@@ -53,3 +53,39 @@ DEBUG:root:open
 DEBUG:root:open
 DEBUG:root:rename
 DEBUG:root:/usr/local/timecapsule/
+DEBUG:root:/usr/local/timecapsule/
+DEBUG:root:/usr/local/timecapsule/
+DEBUG:root:/usr/local/timecapsule/
+DEBUG:root:open
+DEBUG:root:open
+DEBUG:root:open
+DEBUG:root:open
+DEBUG:root:/usr/local/timecapsule/
+DEBUG:root:open
+DEBUG:root:open
+DEBUG:root:/usr/local/timecapsule/
+DEBUG:root:open
+DEBUG:root:/usr/local/timecapsule/
+DEBUG:root:open
+DEBUG:root:/usr/local/timecapsule/
+DEBUG:root:open duong
+DEBUG:root:open duong
+DEBUG:root:/usr/local/timecapsule/
+DEBUG:root:/usr/local/timecapsule/
+DEBUG:root: duong getattr
+DEBUG:root: duong getattr
+DEBUG:root: duong getattr
+DEBUG:root: duong readdir
+DEBUG:root: duong getattr
+DEBUG:root: duong getattr
+DEBUG:root: duong getattr
+DEBUG:root: duong readdir
+DEBUG:root: duong getattr
+DEBUG:root:open duong
+DEBUG:root: duong getattr
+DEBUG:root: duong getattr
+DEBUG:root: duong getattr
+DEBUG:root: duong getattr
+DEBUG:root: duong getattr
+DEBUG:root: duong rename
+DEBUG:root:not time
